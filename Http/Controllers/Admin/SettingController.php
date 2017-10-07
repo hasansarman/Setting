@@ -1,13 +1,17 @@
-<?php namespace Modules\Setting\Http\Controllers\Admin;
+<?php
+
+namespace Modules\Setting\Http\Controllers\Admin;
 
 use Illuminate\Session\Store;
 use Modules\Core\Http\Controllers\Admin\AdminBaseController;
+use Modules\Core\Traits\CanRequireAssets;
 use Modules\Setting\Http\Requests\SettingRequest;
 use Modules\Setting\Repositories\SettingRepository;
-use Pingpong\Modules\Module;
+use Nwidart\Modules\Module;
 
 class SettingController extends AdminBaseController
 {
+    use CanRequireAssets;
     /**
      * @var SettingRepository
      */
@@ -39,18 +43,13 @@ class SettingController extends AdminBaseController
     {
         $this->setting->createOrUpdate($request->all());
 
-        flash(trans('setting::messages.settings saved'));
-
-        return redirect()->route('dashboard.module.settings', [$this->session->get('module', 'Core')]);
+        return redirect()->route('dashboard.module.settings', [$this->session->get('module', 'Core')])
+            ->withSuccess(trans('setting::messages.settings saved'));
     }
 
     public function getModuleSettings(Module $currentModule)
     {
-        $this->assetPipeline->requireJs('selectize.js');
-        $this->assetPipeline->requireCss('selectize.css');
-        $this->assetPipeline->requireCss('selectize-default.css');
-
-        $this->session->set('module', $currentModule->getLowerName());
+        $this->session->put('module', $currentModule->getLowerName());
 
         $modulesWithSettings = $this->setting->moduleSettings($this->module->enabled());
 

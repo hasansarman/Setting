@@ -1,8 +1,8 @@
 <?php
+
 return [
     'setting.settings' => [
-        'index',
-        'getModuleSettings',
-        'store',
+        'index' => 'setting::settings.list resource',
+        'edit' => 'setting::settings.edit resource',
     ],
 ];

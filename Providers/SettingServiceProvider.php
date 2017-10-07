@@ -1,8 +1,15 @@
-<?php namespace Modules\Setting\Providers;
+<?php
+
+namespace Modules\Setting\Providers;
 
 use Illuminate\Foundation\AliasLoader;
 use Illuminate\Support\ServiceProvider;
+use Modules\Core\Events\BuildingSidebar;
+use Modules\Core\Traits\CanGetSidebarClassForModule;
+use Modules\Core\Traits\CanPublishConfiguration;
+use Modules\Setting\Blade\SettingDirective;
 use Modules\Setting\Entities\Setting;
+use Modules\Setting\Events\Handlers\RegisterSettingSidebar;
 use Modules\Setting\Facades\Settings as SettingsFacade;
 use Modules\Setting\Repositories\Cache\CacheSettingDecorator;
 use Modules\Setting\Repositories\Eloquent\EloquentSettingRepository;
@@ -11,6 +18,7 @@ use Modules\Setting\Support\Settings;
 
 class SettingServiceProvider extends ServiceProvider
 {
+    use CanPublishConfiguration, CanGetSidebarClassForModule;
     /**
      * Indicates if loading of the provider is deferred.
      *
@@ -27,7 +35,7 @@ class SettingServiceProvider extends ServiceProvider
     {
         $this->registerBindings();
 
-        $this->app['setting.settings'] = $this->app->share(function ($app) {
+        $this->app->singleton('setting.settings', function ($app) {
             return new Settings($app[SettingRepository::class]);
         });
 
@@ -35,6 +43,23 @@ class SettingServiceProvider extends ServiceProvider
             $loader = AliasLoader::getInstance();
             $loader->alias('Settings', SettingsFacade::class);
         });
+
+        $this->app->bind('setting.setting.directive', function () {
+            return new SettingDirective();
+        });
+
+        $this->app['events']->listen(
+            BuildingSidebar::class,
+            $this->getSidebarClassForModule('setting', RegisterSettingSidebar::class)
+        );
+    }
+
+    public function boot()
+    {
+        $this->publishConfig('setting', 'permissions');
+        $this->publishConfig('setting', 'config');
+        $this->registerBladeTags();
+        $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
     }
 
     /**
@@ -59,8 +84,18 @@ class SettingServiceProvider extends ServiceProvider
             return new CacheSettingDecorator($repository);
         });
         $this->app->bind(
-            \Modules\Core\Contracts\Setting::class,
+            \Modules\Setting\Contracts\Setting::class,
             Settings::class
         );
+    }
+
+    private function registerBladeTags()
+    {
+        if (app()->environment() === 'testing') {
+            return;
+        }
+        $this->app['blade.compiler']->directive('setting', function ($value) {
+            return "<?php echo SettingDirective::show([$value]); ?>";
+        });
     }
 }

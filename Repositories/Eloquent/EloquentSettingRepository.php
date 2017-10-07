@@ -1,7 +1,12 @@
-<?php namespace Modules\Setting\Repositories\Eloquent;
+<?php
+
+namespace Modules\Setting\Repositories\Eloquent;
 
 use Illuminate\Support\Facades\Config;
 use Modules\Core\Repositories\Eloquent\EloquentBaseRepository;
+use Modules\Setting\Entities\Setting;
+use Modules\Setting\Events\SettingIsCreating;
+use Modules\Setting\Events\SettingIsUpdating;
 use Modules\Setting\Events\SettingWasCreated;
 use Modules\Setting\Events\SettingWasUpdated;
 use Modules\Setting\Repositories\SettingRepository;
@@ -28,7 +33,7 @@ class EloquentSettingRepository extends EloquentBaseRepository implements Settin
 
         $settings = [];
         foreach ($rawSettings as $setting) {
-            $settings[$setting->name] = $setting;
+            $settings[$setting->NAME] = $setting;
         }
 
         return $settings;
@@ -47,6 +52,10 @@ class EloquentSettingRepository extends EloquentBaseRepository implements Settin
             if ($setting = $this->findByName($settingName)) {
                 $this->updateSetting($setting, $settingValues);
                 continue;
+            }
+            else{
+                print_r($this->findByName($settingName));
+
             }
             $this->createForName($settingName, $settingValues);
         }
@@ -68,30 +77,35 @@ class EloquentSettingRepository extends EloquentBaseRepository implements Settin
      */
     public function findByName($settingName)
     {
-        return $this->model->where('name', $settingName)->first();
+        return $this->model->where('NAME', $settingName)->first();
     }
 
     /**
      * Create a setting with the given name
      * @param string $settingName
      * @param $settingValues
+     * @return Setting
      */
     private function createForName($settingName, $settingValues)
     {
+        event($event = new SettingIsCreating($settingName, $settingValues));
+
         $setting = new $this->model();
-        $setting->name = $settingName;
+        $setting->NAME = $settingName;
 
-        if ($this->isTranslatableSetting($settingName)) {
-            $setting->isTranslatable = true;
-            $this->setTranslatedAttributes($settingValues, $setting);
-            event(new SettingWasCreated($settingName, true, $settingValues));
+      /*  if ($this->isTranslatableSetting($settingName)) {
+            $setting->ISTRANSLATABLE = true;
+            $this->setTranslatedAttributes($event->getSettingValues(), $setting);
         } else {
-            $setting->isTranslatable = false;
-            $setting->plainValue = $this->getSettingPlainValue($settingValues);
-            event(new SettingWasCreated($settingName, false, $settingValues));
-        }
+            $setting->ISTRANSLATABLE = false;*/
+            $setting->PLAINVALUE = $this->getSettingPlainValue($event->getSettingValues());
+    //    }
 
-        return $setting->save();
+        $setting->save();
+
+        event(new SettingWasCreated($setting));
+
+        return $setting;
     }
 
     /**
@@ -101,18 +115,19 @@ class EloquentSettingRepository extends EloquentBaseRepository implements Settin
      */
     private function updateSetting($setting, $settingValues)
     {
-        $name = $setting->name;
+        $name = $setting->NAME;
+        event($event = new SettingIsUpdating($setting, $name, $settingValues));
 
-        if ($this->isTranslatableSetting($name)) {
-            $this->setTranslatedAttributes($settingValues, $setting);
-            event(new SettingWasUpdated($name, true, $settingValues));
-        } else {
-            $oldValues = $setting->plainValue;
-            $setting->plainValue = $this->getSettingPlainValue($settingValues);
-            event(new SettingWasUpdated($name, true, $settingValues, $oldValues));
-        }
+        /*if ($this->isTranslatableSetting($name)) {
+            $this->setTranslatedAttributes($event->getSettingValues(), $setting);
+        } else {*/
+            $setting->PLAINVALUE = $this->getSettingPlainValue($event->getSettingValues());
+      //  }
+        $setting->save();
 
-        return $setting->save();
+        event(new SettingWasUpdated($setting));
+
+        return $setting;
     }
 
     /**
@@ -122,7 +137,7 @@ class EloquentSettingRepository extends EloquentBaseRepository implements Settin
     private function setTranslatedAttributes($settingValues, $setting)
     {
         foreach ($settingValues as $lang => $value) {
-            $setting->translateOrNew($lang)->value = $value;
+            $setting->translateOrNew($lang)->VALUE = $value;
         }
     }
 
@@ -157,7 +172,7 @@ class EloquentSettingRepository extends EloquentBaseRepository implements Settin
     {
         $moduleSettings = [];
         foreach ($this->findByModule($module) as $setting) {
-            $moduleSettings[$setting->name] = $setting;
+            $moduleSettings[$setting->NAME] = $setting;
         }
 
         return $moduleSettings;
@@ -170,7 +185,7 @@ class EloquentSettingRepository extends EloquentBaseRepository implements Settin
      */
     public function findByModule($module)
     {
-        return $this->model->where('name', 'LIKE', $module . '::%')->get();
+        return $this->model->where('NAME', 'LIKE', $module . '::%')->get();
     }
 
     /**
@@ -180,7 +195,7 @@ class EloquentSettingRepository extends EloquentBaseRepository implements Settin
      */
     public function get($settingName)
     {
-        return $this->model->where('name', 'LIKE', "{$settingName}")->first();
+        return $this->model->where('NAME', 'LIKE', "{$settingName}")->first();
     }
 
     /**
@@ -191,7 +206,7 @@ class EloquentSettingRepository extends EloquentBaseRepository implements Settin
     public function translatableModuleSettings($module)
     {
         return array_filter($this->moduleSettings($module), function ($setting) {
-            return isset($setting['translatable']) && $setting['translatable'] === true;
+            return isset($setting['TRANSLATABLE']) && $setting['TRANSLATABLE'] === true;
         });
     }
 
@@ -203,7 +218,7 @@ class EloquentSettingRepository extends EloquentBaseRepository implements Settin
     public function plainModuleSettings($module)
     {
         return array_filter($this->moduleSettings($module), function ($setting) {
-            return !isset($setting['translatable']) || $setting['translatable'] === false;
+            return !isset($setting['TRANSLATABLE']) || $setting['TRANSLATABLE'] === false;
         });
     }
 
@@ -230,7 +245,7 @@ class EloquentSettingRepository extends EloquentBaseRepository implements Settin
 
         $setting = config("$configSettingName");
 
-        return isset($setting['translatable']) && $setting['translatable'] === true;
+        return isset($setting['TRANSLATABLE']) && $setting['TRANSLATABLE'] === true;
     }
 
     /**

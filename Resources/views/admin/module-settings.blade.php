@@ -12,6 +12,7 @@
 @stop
 
 @section('content')
+
 {!! Form::open(['route' => ['admin.setting.settings.store'], 'method' => 'post']) !!}
 <div class="row">
     <div class="sidebar-nav col-sm-2">
@@ -39,31 +40,11 @@
     	</div>
     </div>
     <div class="col-md-10">
-        <?php if ($translatableSettings): ?>
-            <div class="box box-primary">
-                <div class="box-header">
-                    <h3 class="box-title">{{ trans('core::core.title.translatable fields') }}</h3>
-                </div>
-                <div class="box-body">
-                    <div class="nav-tabs-custom">
-                        @include('partials.form-tab-headers')
-                        <div class="tab-content">
-                            <?php $i = 0; ?>
-                            <?php foreach (LaravelLocalization::getSupportedLocales() as $locale => $language): ?>
-                                <?php $i++; ?>
-                                <div class="tab-pane {{ App::getLocale() == $locale ? 'active' : '' }}" id="tab_{{ $i }}">
-                                    @include('setting::admin.partials.fields', ['settings' => $translatableSettings])
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        <?php endif; ?>
+
         <?php if ($plainSettings): ?>
         <div class="box box-primary">
             <div class="box-header">
-                <h3 class="box-title">{{ trans('core::core.title.non translatable fields') }}</h3>
+                <h3 class="box-title">{{ trans('core::core.title.settings') }}</h3>
             </div>
             <div class="box-body">
                 @include('setting::admin.partials.fields', ['settings' => $plainSettings])
@@ -72,7 +53,6 @@
         <?php endif; ?>
         <div class="box-footer">
             <button type="submit" class="btn btn-primary btn-flat">{{ trans('core::core.button.update') }}</button>
-            <button class="btn btn-default btn-flat" name="button" type="reset">{{ trans('core::core.button.reset') }}</button>
             <a class="btn btn-danger pull-right btn-flat" href="{{ URL::route('admin.setting.settings.index')}}"><i class="fa fa-times"></i> {{ trans('core::core.button.cancel') }}</a>
         </div>
     </div>
@@ -80,7 +60,7 @@
 {!! Form::close() !!}
 @stop
 
-@section('scripts')
+@push('js-stack')
 <script>
 $( document ).ready(function() {
     $('input[type="checkbox"].flat-blue, input[type="radio"].flat-blue').iCheck({
@@ -99,4 +79,4 @@ $( document ).ready(function() {
     });
 });
 </script>
-@stop
+@endpush

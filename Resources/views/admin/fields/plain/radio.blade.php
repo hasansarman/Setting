@@ -5,7 +5,7 @@
                         name="{{ $settingName }}"
                         type="radio"
                         class="flat-blue"
-                        {{ isset($dbSettings[$settingName]) && (bool)$dbSettings[$settingName]->plainValue == $value ? 'checked' : '' }}
+                        {{ isset($dbSettings[$settingName]) && (bool)$dbSettings[$settingName]->PLAINVALUE == $value ? 'checked' : '' }}
                         value="{{ $value }}" />
                 {{ trans($optionName) }}
         </label>

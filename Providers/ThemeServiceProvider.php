@@ -1,4 +1,6 @@
-<?php namespace Modules\Setting\Providers;
+<?php
+
+namespace Modules\Setting\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
@@ -10,10 +12,8 @@ class ThemeServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->booted(function () {
-            $this->registerAllThemes();
-            $this->setActiveTheme();
-        });
+        $this->registerAllThemes();
+        $this->setActiveTheme();
     }
 
     /**

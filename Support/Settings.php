@@ -1,6 +1,8 @@
-<?php namespace Modules\Setting\Support;
+<?php
 
-use Modules\Core\Contracts\Setting;
+namespace Modules\Setting\Support;
+
+use Modules\Setting\Contracts\Setting;
 use Modules\Setting\Repositories\SettingRepository;
 
 class Settings implements Setting
@@ -34,13 +36,13 @@ class Settings implements Setting
             return is_null($default) ? $defaultFromConfig : $default;
         }
 
-        if ($setting->isTranslatable) {
+        /*if ($setting->ISTRANSLATABLE) {
             if ($setting->hasTranslation($locale)) {
-                return empty($setting->translate($locale)->value) ? $defaultFromConfig : $setting->translate($locale)->value;
+                return empty($setting->translate($locale)->VALUE) ? $defaultFromConfig : $setting->translate($locale)->VALUE;
             }
-        } else {
-            return empty($setting->plainValue) ? $defaultFromConfig : $setting->plainValue;
-        }
+        } else {*/
+            return empty($setting->PLAINVALUE) ? $defaultFromConfig : $setting->PLAINVALUE;
+      //  }
 
         return $defaultFromConfig;
     }
@@ -63,10 +65,14 @@ class Settings implements Setting
      *
      * @param  string $key
      * @param  mixed  $value
-     * @return void
+     * @return \Modules\Setting\Entities\Setting
      */
     public function set($key, $value)
     {
+        return $this->setting->create([
+            'NAME' => $key,
+            'PLAINVALUE' => $value,
+        ]);
     }
 
     /**
